@@ -310,3 +310,14 @@ with tab5:
 
     if st.checkbox("SVC", key=6):
         ml_predictor(SVC(probability=True))
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+st.markdown("""
+<hr style="margin-top: 30px;">
+<div style="text-align: center; font-size: 0.9em; color: gray;">
+    Created by <b>Partho Sarothi Das</b><br>
+    <i>Aspiring Data Scientist | Passionate about ML & Visualization</i><br>
+    Email: <a href="mailto:partho52@gmail.com">partho52@gmail.com</a>
+</div>
+""", unsafe_allow_html=True)
