@@ -63,3 +63,10 @@ The Iris dataset is available via Seaborn and was originally introduced by R.A. 
 ##  Contributions
 
 Contributions are welcome! Feel free to fork this repo and submit pull requests.
+
+---
+## 🌐 Connect with Me  
+🔗 **GitHub:** [ParthoSarothiDas](https://github.com/ParthoSarothiDas)  
+🔗 **LinkedIn:** [Partho Sarothi Das](https://www.linkedin.com/in/partho-sarothi-das/)  
+📧 **Email:** partho52@gmail.com  
+
