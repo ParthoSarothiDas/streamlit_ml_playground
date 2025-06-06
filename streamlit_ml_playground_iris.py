@@ -11,6 +11,7 @@ from xgboost import XGBClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 
+st.set_page_config('iris', '🌸', layout='centered')
 df = sns.load_dataset("iris")
 
 # Page title
@@ -66,109 +67,200 @@ with tab1:
 
     Each species has 50 samples, making the dataset perfectly balanced.
     """)
-
+    
 
 # Tab 2: Dataset Info
 with tab2:
     st.subheader("Dataset Overview and Summary Statistics")
     st.markdown("""
+    <p style='text-align: justify;'>
     This section provides essential information about the Iris dataset, including its shape, unique values, summary statistics, 
-    missing or duplicate entries, and the distribution of the target variable. Use the checkboxes below to explore different aspects of the dataset.
-    """)
+    missing or duplicate entries, and the distribution of the target variable. Use the radio button below to explore different aspects of the dataset.
+    </p>
+    """, unsafe_allow_html=True)
     st.markdown("---")
 
-    if st.checkbox("Show dataset's first & last rows"):
-        st.subheader("First five rows")
-        st.write(df.head())
-        st.subheader("Last five rows")
-        st.write(df.tail())
+    col1, col2 = st.columns([0.7,2])
+    options = [None,'First & Last Rows','Shape of Dataset','Unique Values','Statistics','Missing & Duplicates','Target Variable']
+    selected_info_type = col1.radio("Select a Graph", options=options, key=110)
+    with col2:
+        with st.container(border=True):
+            if selected_info_type == "First & Last Rows":
+                st.subheader("First five rows")
+                st.table(df.head())
+                st.subheader("Last five rows")
+                st.table(df.tail())
 
-    if st.checkbox("Show dataset shape"):
-        st.write(f"Number of rows: **{df.shape[0]}**")
-        st.write(f"Number of columns: **{df.shape[1]}**")
-    if st.checkbox("Show unique values"):
-        st.write(df.nunique())
-    if st.checkbox("Show Statistics"):
-        st.subheader("Numerical Columns")
-        st.write(df.describe())
-        st.subheader("Categorical Columns")
-        st.write(df.describe(include=object))
-    if st.checkbox("Missing and Duplicate values"):
-        st.subheader("Missing values:")
-        st.write(df.isnull().sum())
-        st.subheader("Duplicated values:")
-        st.write(df[df.duplicated()])
-    if st.checkbox("Target Variable"):
-        st.subheader("Class distribution of target variable")
-        col1, col2, = st.columns(2)
-        col1.text("Distriburion on counts:")
-        col1.write(df[df.columns[-1]].value_counts())
+            elif selected_info_type == "Shape of Dataset":
+                st.subheader("Shape of the Dataset")
+                st.write(f"Number of rows: **{df.shape[0]}**")
+                st.write(f"Number of columns: **{df.shape[1]}**")
 
-        col2.text("Distribution on percentage:")
-        col2.write(df[df.columns[-1]].value_counts(normalize=True)*100)
+            elif selected_info_type == "Unique Values":
+                st.subheader("Unique Values")
+                st.table(df.nunique())
+
+            elif selected_info_type == "Statistics":
+                st.subheader("Numerical Columns")
+                st.table(df.describe())
+                st.subheader("Categorical Columns")
+                st.table(df.describe(include=object))
+
+            elif selected_info_type == "Missing & Duplicates":
+                st.subheader("Missing values:")
+                st.table(df.isnull().sum())
+                st.subheader("Duplicated values:")
+                st.table(df[df.duplicated()])
+
+            elif selected_info_type == "Target Variable":
+                st.subheader("Class distribution of target variable")
+                col1, col2, = st.columns(2)
+                col1.write("Distriburion on counts:")
+                col1.table(df[df.columns[-1]].value_counts())
+
+                col2.write("Distribution on percentage:")
+                col2.table(df[df.columns[-1]].value_counts(normalize=True)*100)
     
 # Tab 3: Visualizations
 with tab3:
     st.subheader("Exploratory Data Visualizations")
     st.markdown("""
+    <p style='text-align: justify;'>
     This section provides interactive visualizations to help uncover patterns, relationships, and distributions in the Iris dataset. 
     You can explore the features through boxplots, heatmaps, pairplots, histograms, and violin plots.
-    """)
-    st.markdown("---")
-    feature_options = ["Select a feature"] + df.columns[:-1].tolist()
-    selected_feature = st.selectbox("Select a feature for boxplot", feature_options)
-    if selected_feature != "Select a feature":
-        fig, ax = plt.subplots(figsize=(4,1))
-        sns.boxplot(x=df[selected_feature], ax=ax, color='skyblue')
-        ax.set_title(f"Boxplot of {selected_feature}")
-        st.pyplot(fig)
-    else:
-        pass
+    </p>
+    """, unsafe_allow_html=True)
+    # -----------------------> Boxplot------------
+    with st.container(border=True):
+        feature_options = ["Select a feature"] + df.columns[:-1].tolist()
+        selected_feature = st.selectbox("Select a feature for boxplot", feature_options)
+        if selected_feature != "Select a feature":
+            col1,col2 = st.columns(2)
+            
+            fig, ax = plt.subplots(figsize=(1,1.7))
+            sns.boxplot(y=df[selected_feature], ax=ax, color='skyblue')
+            col1.pyplot(fig)
 
-  
-    # Radio Buttons for Graph Selection
-    status = st.radio("Select a Graph", options=['None','Heatmap','Pairplot','Histogram','Violin'], horizontal=True)
-    # if status != 'None':
-    if status == 'Heatmap':
-        fig = plt.figure(figsize=(6, 2))
-        sns.heatmap(df.corr(numeric_only=True), annot=True, cmap='coolwarm')
-        plt.title("Correlation Heatmap")
-        st.pyplot(fig)
+            # Data analysis for storytelling
+            feature_data = df[selected_feature].dropna()
+            q1 = feature_data.quantile(0.25)
+            q3 = feature_data.quantile(0.75)
+            median = feature_data.median()
+            iqr = q3 - q1
+            outliers = feature_data[(feature_data < (q1 - 1.5 * iqr)) | (feature_data > (q3 + 1.5 * iqr))]
 
-    elif status == 'Pairplot':
-        plt.figure()
-        fig=sns.pairplot(data=df, hue='species', height=2)
-        st.pyplot(fig)
+            # Storytelling block
+            col2.markdown("### 📖 Insight")
+            col2.markdown(f"""
+            - The **median {selected_feature.replace('_', ' ')}** is approximately **{median:.2f} cm**, representing the central tendency.
+            - The **Interquartile Range (IQR)** is **{iqr:.2f} cm**, indicating {"a tight clustering" if iqr < 0.5 else "a wide spread"} among 50% of the samples.
+            - There are **{len(outliers)} potential outlier(s)**, which may reflect unusual observations or measurement variations.
+            - Understanding the distribution of **{selected_feature.replace('_', ' ')}** is crucial for distinguishing iris species and preparing features for classification models.
+            """)
+    with st.container(border=True):
+        # Radio Buttons for Graph Selection
+        status = st.radio("Select a Graph", options=['None','Heatmap','Pairplot','Histogram','Violin'], horizontal=True, key=100)
+        if status == 'Heatmap':
+            st.subheader("🔍 Feature Correlation Heatmap")
 
-    elif status == 'Histogram':
-        fig = plt.figure(figsize=(8,4))
-        for i, col in enumerate(df.columns[0:4]): # (numeric_df.columns):
-            plt.subplot(2,2,i+1)
-            sns.histplot(x=df[col], kde = True, color='lightblue')
-            plt.title(f'Distribution of {col}')
-        plt.tight_layout()
-        st.pyplot(fig)
+            # Compute correlation matrix
+            corr_matrix = df.drop(columns='species').corr()
 
-    elif status == 'Violin':
-        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(8,4))
-        sns.violinplot(data=df, y='sepal_length', ax=ax[0,0])
-        sns.violinplot(data=df, y='sepal_width', ax=ax[0,1])
-        sns.violinplot(data=df, y='petal_length', ax=ax[1,0])
-        sns.violinplot(data=df, y='petal_width', ax=ax[1,1])
-        plt.tight_layout()
-        st.pyplot(fig)
+            # Plot heatmap
+            fig, ax = plt.subplots(figsize=(6, 4))
+            sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", linewidths=0.5, ax=ax)
+            ax.set_title("Feature Correlation Heatmap (Iris Dataset)")
+            st.pyplot(fig)
 
-    else:
-        pass
+            # Storytelling
+            st.markdown("### 📖 Insight")
+            st.markdown("""
+            - The heatmap shows the **pairwise correlations** between the four numerical features in the Iris dataset.
+            - 🔸 **Petal length** and **petal width** are **very strongly correlated** (**correlation ≈ 0.96**). This suggests that one of them might be redundant in some models.
+            - 🔸 **Sepal length** has a **moderate positive correlation** with petal length (**≈ 0.87**), indicating some shared pattern across species.
+            - 🔸 **Sepal width** shows a **weak negative correlation** with the other features, especially petal width (**≈ -0.37**), which could help in species separation.
+            - These insights are useful for:
+            - Understanding feature importance
+            - Selecting variables for dimensionality reduction (like PCA)
+            - Designing interpretable classification models
+            """)
+        elif status == 'Pairplot':
+            st.subheader("🔍 Feature Pairplot")
+            plt.figure()
+            fig=sns.pairplot(data=df, hue='species', height=2)
+            st.pyplot(fig)
+            st.markdown("### 📖 Insight")
+            st.markdown("""
+            The pairplot shows **scatter plots between each pair of numerical features**, color-coded by iris species, along with histograms on the diagonal.
+
+            - **Setosa** is clearly **separable from the other two species** across most feature pairs — especially in plots involving **petal length** and **petal width**. This suggests that even simple models could effectively classify Setosa.
+            - **Versicolor** and **Virginica** show **some overlap**, particularly in features like **sepal width** and **sepal length**, but they start to diverge in **petal dimensions**.
+            - The diagonal histograms show that:
+            - **Petal length and width** are **bimodal or trimodal**, strongly aligned with species separation.
+            - **Sepal features** are more overlapping, making them less powerful as standalone features.
+            - Overall, the pairplot highlights that:
+            - **Petal features** are the most informative for species classification.
+            - There's a strong **linear relationship** between petal length and petal width.
+                        
+            This visualization supports the idea that **feature combinations** matter, and can guide feature engineering or dimensionality reduction (e.g., PCA).
+            """)
+
+        elif status == 'Histogram':
+            st.subheader("🔍 Feature Histogram's")
+            fig = plt.figure(figsize=(8,4))
+            for i, col in enumerate(df.columns[0:4]): # (numeric_df.columns):
+                plt.subplot(2,2,i+1)
+                sns.histplot(x=df[col], kde = True, color='lightblue')
+                plt.title(f'Distribution of {col}')
+            plt.tight_layout()
+            st.pyplot(fig)
+
+            # Storytelling
+            st.markdown("### 📖 Insight")
+            st.markdown("""
+            The histograms above show the **distribution of each feature** in the Iris dataset, with smooth KDE (Kernel Density Estimation) curves overlayed.
+            -  **Sepal Length** appears **roughly normally distributed**, with a slight right skew. Most flowers have a sepal length between 5 and 6 cm.
+            -  **Sepal Width** shows a **slightly left-skewed** distribution, and it’s more **spread out** compared to other features. This may affect model performance if not standardized.
+            -  **Petal Length** and **Petal Width** are **clearly bimodal**, indicating that different species have distinct petal measurements. These features are likely **highly discriminative** for classification.    
+            
+            Overall, **petal-based features** are more informative due to their **bimodal and wider range**, which makes them powerful for distinguishing species like *Setosa*, *Versicolor*, and *Virginica*.
+            """)
+
+
+        elif status == 'Violin':
+            st.subheader("🔍 Feature Violin Plot")
+            fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(8,4))
+            sns.violinplot(data=df, y='sepal_length', ax=ax[0,0])
+            sns.violinplot(data=df, y='sepal_width', ax=ax[0,1])
+            sns.violinplot(data=df, y='petal_length', ax=ax[1,0])
+            sns.violinplot(data=df, y='petal_width', ax=ax[1,1])
+            plt.tight_layout()
+            st.pyplot(fig)
+
+            # Storytelling
+            st.markdown("### 📖 Insight")
+            st.markdown("""
+            The violin plots above provide a deeper look at the **distribution, density, and variability** of each numerical feature in the Iris dataset.
+            -  **Sepal Length** and **Sepal Width** both show fairly **symmetrical** distributions, but **sepal width** has **a wider spread**, indicating more variation across samples.
+            -  **Petal Length** and **Petal Width** both show **distinct peaks**, suggesting **multiple modes** — which aligns with the idea that different iris species have clearly different petal sizes.
+            - The **fatter sections of each violin** indicate where data is concentrated, while the **thinner ends** represent rare or extreme values. Notably, **petal-based features** have clear variations in density, hinting at their strong relevance for classification.
+
+            Compared to boxplots or histograms, violin plots help us visualize the **shape** of the data more smoothly, making them ideal for exploratory pattern recognition.
+            """)
+
+        # else:
+        #     pass
 
 # tab 4: ML Models
 with tab4:
     st.subheader("Train and Evaluate Machine Learning Models")
     st.markdown("""
+    <p style='text-align: justify;'>           
     In this section, you can train various classification models on the Iris dataset and evaluate their performance. 
     Select a model to view its accuracy, training and test scores, and confusion matrix. This helps compare model effectiveness for species prediction.
-    """)
-    st.markdown("---")
+    </p>
+    """, unsafe_allow_html=True)
+    # st.markdown("---")
 
     df.drop_duplicates(inplace=True)
 
@@ -203,53 +295,73 @@ with tab4:
         cm = confusion_matrix(y_test, y_pred)
 
         df_result = pd.DataFrame({
-            "Model Name":[model_name],
+            # "Model Name":[model_name],
             "Accuracy Score":[accuracy],
             "Training Score":[training_score],
             "Test Score": [test_score]
             })
         
-        st.write("Accuracy Table",df_result)
+        
         
         col1, col2 = st.columns([2,1])
         report = classification_report(y_test, y_pred, target_names=encoder.classes_, output_dict=True)
-        st.markdown('---')
-        col1.write("Classification Report")
-        col1.dataframe(pd.DataFrame(report).transpose())
+        # st.markdown('---')
+        col1.write("Accuracy Score")
+        col1.write(df_result)
         col2.write("Confusion Matrix")
         col2.write(cm)
+        st.write("Classification Report")
+        st.table(pd.DataFrame(report).transpose())
         return
 
-    if st.checkbox("AdaBoostClassifier"):
-        ml_classifier(AdaBoostClassifier())
+    with st.container(border=True):
+        # Radio Buttons for Graph Selection
+        model_dict = {
+                "Random Forest": RandomForestClassifier(),
+                "Ada Boost": AdaBoostClassifier(),
+                "Decision Tree": DecisionTreeClassifier(),
+                "K Neighbors": KNeighborsClassifier(),
+                "XG Boost": XGBClassifier(),
+                "SVC": SVC(probability=True)
+                }
+        # option_list = 
+        col1, col2 = st.columns([.6,2])
+        selected_model = col1.radio("Select a Graph", options=[None] + list(model_dict.keys()), key=101)
+        with col2:
+            if selected_model != None:
+                model = model_dict.get(selected_model)
+                ml_classifier(model)
 
-    if st.checkbox("KNeighborsClassifier"):
-        ml_classifier(KNeighborsClassifier())
+        if selected_model != None:
+            st.markdown("### 📖 Insight")
+            st.markdown(f"""
+            You've just evaluated the **{selected_model}** on the classic Iris dataset.
 
-    if st.checkbox("DecisionTreeClassifier"):
-        ml_classifier(DecisionTreeClassifier())
-    
-    if st.checkbox("RandomForestClassifier"):
-        ml_classifier(RandomForestClassifier())
-    
-    if st.checkbox("XGBClassifier"):
-        ml_classifier(XGBClassifier())
-    
-    if st.checkbox("SVC"):
-        ml_classifier(SVC())
+            - The **accuracy score** indicates how well the model is generalizing to **unseen test data**, while the **training score** shows performance on the data the model has already seen.
+            - A large gap between training and test scores might indicate **overfitting** (high train, low test) or **underfitting** (both low).
+            - The **confusion matrix** breaks down predictions into correct and incorrect counts for each class (`setosa`, `versicolor`, `virginica`), helping identify if the model struggles with any specific species.
+            - The **classification report** gives detailed performance metrics:
+            - **Precision**: Of the predicted class samples, how many were correct?
+            - **Recall**: Of the actual class samples, how many were correctly predicted?
+            - **F1-score**: Harmonic mean of precision and recall (a balanced metric).
+            
+            This section helps users **compare multiple models interactively** to find which classifier works best for this dataset.
+            """)
 
 
 # tab 5 : Prediction
 with tab5:
     st.subheader("Predict Iris Species from Flower Measurements")
     st.markdown("""
-    Use this section to **predict the species of an Iris flower** based on user-provided feature inputs. 
+    <p style='text-align: justify;'>
+    Use this section to predict the species of an Iris flower based on user-provided feature inputs. 
     Enter values for sepal and petal dimensions, and choose a classification model to see the predicted species along with the prediction probabilities.  
     This is a hands-on way to see how machine learning models generalize to new, unseen data.
-    """)
-    st.markdown("---")
+    </p>
+    """, unsafe_allow_html=True)
+    # st.markdown("---")
 
-    st.markdown('**User Input Parameters**')
+    st.markdown('**User Input Parameters:**')
 
     def user_input_features():
         col1, col2, col3 = st.columns([4,1,4])
@@ -265,11 +377,9 @@ with tab5:
         }
         features = pd.DataFrame(data, index=[0])
         return features
-
-    df_user = user_input_features()
-    # st.write("**User Input Parameters**")
-    # st.write(df_user)
-
+    with st.container(border=True): 
+        df_user = user_input_features()
+    
     def ml_predictor(model):
         # Scale the user input the same way as training data
         df_user_scaled = scaler.transform(df_user)
@@ -290,29 +400,37 @@ with tab5:
 
         img = predicted_species + ".jpg"
         col2.image(img)
-        st.markdown("---")
+        # st.markdown("---")
         return
 
     if st.checkbox("AdaBoostClassifier", key=1):
-        ml_predictor(AdaBoostClassifier())
+        with st.container(border=True):
+            ml_predictor(AdaBoostClassifier())
 
     if st.checkbox("KNeighborsClassifier", key=2):
-        ml_predictor(KNeighborsClassifier())
+        with st.container(border=True):
+            ml_predictor(KNeighborsClassifier())
 
     if st.checkbox("DecisionTreeClassifier", key=3):
-        ml_predictor(DecisionTreeClassifier())
+        with st.container(border=True):
+            ml_predictor(DecisionTreeClassifier())
 
     if st.checkbox("RandomForestClassifier", key=4):
-        ml_predictor(RandomForestClassifier())
+        with st.container(border=True):
+            ml_predictor(RandomForestClassifier())
 
     if st.checkbox("XGBClassifier", key=5):
-        ml_predictor(XGBClassifier())
+        with st.container(border=True):
+            ml_predictor(XGBClassifier())
 
     if st.checkbox("SVC", key=6):
-        ml_predictor(SVC(probability=True))
+        with st.container(border=True):
+            ml_predictor(SVC(probability=True))
 
+
+
+# Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
-
 st.markdown("""
 <hr style="margin-top: 30px;">
 <div style="text-align: center; font-size: 0.9em; color: gray;">
